@@ -1,0 +1,419 @@
+{
+  "info": {
+    "name": "News Aggregator API",
+    "description": "Complete API collection for News Aggregator backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/user",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "user"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "Get All Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles?per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "20"
+                },
+                {
+                  "key": "q",
+                  "value": "technology",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "2025-10-01",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2025-10-25",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "Technology",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "newsapi,guardian",
+                  "disabled": true
+                },
+                {
+                  "key": "author",
+                  "value": "John",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "desc",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles?q=technology&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "technology"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles?from=2025-10-01&to=2025-10-25",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2025-10-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2025-10-25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Source",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles?source=newsapi,guardian",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "newsapi,guardian"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles?category=Technology",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Technology"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Article",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles/1",
+              "host": ["{{base_url}}"],
+              "path": ["articles", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles/meta/categories",
+              "host": ["{{base_url}}"],
+              "path": ["articles", "meta", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Authors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles/meta/authors",
+              "host": ["{{base_url}}"],
+              "path": ["articles", "meta", "authors"]
+            }
+          }
+        },
+        {
+          "name": "Get Personalized Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/articles/personalized/feed?per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["articles", "personalized", "feed"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sources",
+      "item": [
+        {
+          "name": "Get All Sources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sources",
+              "host": ["{{base_url}}"],
+              "path": ["sources"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Source",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sources/1",
+              "host": ["{{base_url}}"],
+              "path": ["sources", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Preferences",
+      "item": [
+        {
+          "name": "Get Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/preferences",
+              "host": ["{{base_url}}"],
+              "path": ["preferences"]
+            }
+          }
+        },
+        {
+          "name": "Update Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"preferences\": {\n        \"sources\": [\"newsapi\", \"guardian\", \"nytimes\"],\n        \"categories\": [\"Technology\", \"Science\", \"Business\"],\n        \"authors\": [\"Jane Smith\"]\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/preferences",
+              "host": ["{{base_url}}"],
+              "path": ["preferences"]
+            }
+          }
+        },
+        {
+          "name": "Reset Preferences",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/preferences",
+              "host": ["{{base_url}}"],
+              "path": ["preferences"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

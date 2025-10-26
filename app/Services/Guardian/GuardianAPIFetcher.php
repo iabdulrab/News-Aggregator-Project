@@ -1,0 +1,138 @@
+<?php
+
+namespace App\Services\Guardian;
+
+use App\Interfaces\NewsFetcherInterface;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class GuardianAPIFetcher implements NewsFetcherInterface
+{
+    protected string $baseUrl;
+    protected string $apiKey;
+
+    public function __construct()
+    {
+        $this->baseUrl = config('services.guardian_api.base_url', 'https://content.guardianapis.com');
+        $apiKey = config('services.guardian_api.api_key');
+        
+        if (empty($apiKey)) {
+            throw new \Exception(
+                'Guardian API key is not configured. Please set GUARDIAN_API_KEY in your .env file. ' .
+                'Get your free API key at: https://open-platform.theguardian.com/access/'
+            );
+        }
+        
+        $this->apiKey = $apiKey;
+    }
+
+    public function getSourceKey(): string
+    {
+        return 'guardian';
+    }
+
+    public function fetchArticles(array $params = []): array
+    {
+        try {
+            $queryParams = [
+                'api-key' => $this->apiKey,
+                'page-size' => $params['pageSize'] ?? 50,
+                'show-fields' => 'thumbnail,trailText,body,byline',
+                'show-tags' => 'contributor',
+                'order-by' => 'newest',
+            ];
+
+            // Add optional parameters
+            // Guardian API: only add q parameter if explicitly provided
+            // Without q parameter, it returns all latest articles by default
+            if (!empty($params['q'])) {
+                $queryParams['q'] = $params['q'];
+            }
+
+            if (!empty($params['section'])) {
+                $queryParams['section'] = $params['section'];
+            }
+
+            if (!empty($params['from'])) {
+                $queryParams['from-date'] = date('Y-m-d', strtotime($params['from']));
+            }
+
+            if (!empty($params['to'])) {
+                $queryParams['to-date'] = date('Y-m-d', strtotime($params['to']));
+            }
+
+            // For local development, you might need to disable SSL verification
+            $response = Http::withOptions([
+                'verify' => config('app.env') === 'production', // Only verify SSL in production
+            ])->timeout(30)->get($this->baseUrl . '/search', $queryParams);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $results = $data['response']['results'] ?? [];
+                
+                // Log successful fetch for debugging
+                Log::info('Guardian API fetch successful', [
+                    'total' => $data['response']['total'] ?? 0,
+                    'fetched' => count($results),
+                    'url' => $response->effectiveUri()
+                ]);
+                
+                return $results;
+            }
+
+            Log::error('Guardian API fetch failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Guardian API exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [];
+        }
+    }
+
+    public function transformArticle(array $article): array
+    {
+        $fields = $article['fields'] ?? [];
+        $tags = $article['tags'] ?? [];
+        
+        // Extract author from tags or byline
+        $author = null;
+        if (!empty($tags)) {
+            $contributorTags = array_filter($tags, fn($tag) => ($tag['type'] ?? '') === 'contributor');
+            if (!empty($contributorTags)) {
+                $author = reset($contributorTags)['webTitle'] ?? null;
+            }
+        }
+        if (!$author && !empty($fields['byline'])) {
+            $author = $fields['byline'];
+        }
+
+        $transformed = [
+            'source_article_id' => $article['id'] ?? null,
+            'title' => $article['webTitle'] ?? '',
+            'description' => $fields['trailText'] ?? null,
+            'content' => $fields['body'] ?? null,
+            'url' => $article['webUrl'] ?? '',
+            'url_to_image' => $fields['thumbnail'] ?? null,
+            'published_at' => isset($article['webPublicationDate']) ? date('Y-m-d H:i:s', strtotime($article['webPublicationDate'])) : null,
+            'author_name' => $author,
+            'category' => $article['sectionName'] ?? null,
+            'raw' => $article,
+        ];
+
+        // Log for debugging
+        Log::debug('Guardian article transformed', [
+            'title' => $transformed['title'],
+            'url' => $transformed['url'],
+            'has_fields' => !empty($fields)
+        ]);
+
+        return $transformed;
+    }
+}
+
