@@ -14,10 +14,10 @@ class FetchNewsArticles extends Command
      */
     protected $signature = 'news:fetch 
                             {--sources= : Comma-separated list of sources to fetch from}
-                            {--from= : Fetch articles from this date (Y-m-d)}
-                            {--to= : Fetch articles until this date (Y-m-d)}
-                            {--q= : Search query}
-                            {--category= : Category filter}';
+                            {--from_date= : Fetch articles from this date (Y-m-d)}
+                            {--to_date= : Fetch articles until this date (Y-m-d)}
+                            {--search_query= : Search query}
+                            {--article_category= : Category filter}';
 
     /**
      * The console command description.
@@ -35,10 +35,10 @@ class FetchNewsArticles extends Command
 
         // Prepare parameters
         $params = array_filter([
-            'from' => $this->option('from'),
-            'to' => $this->option('to'),
-            'q' => $this->option('q'),
-            'category' => $this->option('category'),
+            'from_date' => $this->option('from_date'),
+            'to_date' => $this->option('to_date'),
+            'search_query' => $this->option('search_query'),
+            'article_category' => $this->option('article_category'),
         ]);
 
         // Fetch articles

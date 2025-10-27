@@ -21,36 +21,31 @@ class ArticleService
 
     public function getArticlesWithAutoFetch(array $filters)
     {
-        $searchTerm = $filters['q'] ?? null;
+        $searchTerm = $filters['search_query'] ?? null;
         $performedAutoFetch = false;
 
-        // Get articles with filters
         $articles = $this->articleRepository->getAllWithFilters($filters);
         $totalCount = $this->articleRepository->countByFilters($filters);
 
-        // AUTO-FETCH FEATURE: If search query provided but no results found, fetch from news sources
+        // This is the part where there are no articles in local database then it will fetch from the news sources and save them in database.
         if (!empty($searchTerm) && $totalCount === 0) {
             Log::info('No articles found for search query, fetching from news sources', [
                 'search_term' => $searchTerm
             ]);
 
             try {
-                // Prepare parameters for fetching
-                $fetchParams = ['q' => $searchTerm];
 
-                // Add date filters if provided
-                if (!empty($filters['from'])) {
-                    $fetchParams['from'] = $filters['from'];
+                $fetchParams = ['search_query' => $searchTerm];
+                if (!empty($filters['from_date'])) {
+                    $fetchParams['from_date'] = $filters['from_date'];
                 }
-                if (!empty($filters['to'])) {
-                    $fetchParams['to'] = $filters['to'];
+                if (!empty($filters['to_date'])) {
+                    $fetchParams['to_date'] = $filters['to_date'];
                 }
-
-                // Fetch from all news sources or specific sources if filter applied
-                if (!empty($filters['source'])) {
-                    $sourceKeys = is_array($filters['source']) 
-                        ? $filters['source'] 
-                        : explode(',', $filters['source']);
+                if (!empty($filters['source_key'])) {
+                    $sourceKeys = is_array($filters['source_key']) 
+                        ? $filters['source_key'] 
+                        : explode(',', $filters['source_key']);
                     
                     $stats = $this->aggregatorService->fetchFromSpecificSources($sourceKeys, $fetchParams);
                 } else {
@@ -64,8 +59,6 @@ class ArticleService
                 ]);
 
                 $performedAutoFetch = true;
-
-                // Rebuild query to get the newly fetched articles
                 $articles = $this->articleRepository->getAllWithFilters($filters);
 
             } catch (\Exception $e) {

@@ -44,10 +44,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /**
-     * Get the user's preference.
-     */
-    public function preference(): HasOne
+    public function preference(): HasOne // this is one to one relationship because the user_preferences table has preferences column containing all the preferences
     {
         return $this->hasOne(UserPreference::class);
     }

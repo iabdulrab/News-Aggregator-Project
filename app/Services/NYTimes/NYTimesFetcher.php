@@ -18,8 +18,7 @@ class NYTimesFetcher implements NewsFetcherInterface
         
         if (empty($apiKey)) {
             throw new \Exception(
-                'New York Times API key is not configured. Please set NYT_API_KEY in your .env file. ' .
-                'Get your free API key at: https://developer.nytimes.com/get-started'
+                'New York Times API key is not configured. Please set NYT_API_KEY in your .env file. '
             );
         }
         
@@ -38,35 +37,31 @@ class NYTimesFetcher implements NewsFetcherInterface
                 'api-key' => $this->apiKey,
             ];
 
-            // Add optional parameters
-            if (!empty($params['q'])) {
-                $queryParams['q'] = $params['q'];
+            if (!empty($params['search_query'])) {
+                $queryParams['q'] = $params['search_query'];
             }
 
-            if (!empty($params['fq'])) {
-                $queryParams['fq'] = $params['fq'];
+            if (!empty($params['article_category'])) {
+                $queryParams['fq'] = $params['article_category'];
             }
 
-            if (!empty($params['from'])) {
-                $queryParams['begin_date'] = date('Ymd', strtotime($params['from']));
+            if (!empty($params['from_date'])) {
+                $queryParams['begin_date'] = date('Ymd', strtotime($params['from_date']));
             }
 
-            if (!empty($params['to'])) {
-                $queryParams['end_date'] = date('Ymd', strtotime($params['to']));
+            if (!empty($params['to_date'])) {
+                $queryParams['end_date'] = date('Ymd', strtotime($params['to_date']));
             }
 
-            // Add pagination
             $queryParams['page'] = $params['page'] ?? 0;
 
-            // Build the correct URL (avoid double /articlesearch.json)
             $url = $this->baseUrl;
             if (!str_ends_with($url, '/articlesearch.json')) {
                 $url .= '/articlesearch.json';
             }
             
-            // For local development, you might need to disable SSL verification
             $response = Http::withOptions([
-                'verify' => config('app.env') === 'production', // Only verify SSL in production
+                'verify' => config('app.env') === 'production',
             ])->timeout(30)->get($url, $queryParams);
 
             if ($response->successful()) {
@@ -91,7 +86,6 @@ class NYTimesFetcher implements NewsFetcherInterface
 
     public function transformArticle(array $article): array
     {
-        // Extract author from byline
         $author = null;
         if (!empty($article['byline']['original'])) {
             $author = str_replace('By ', '', $article['byline']['original']);
@@ -102,7 +96,6 @@ class NYTimesFetcher implements NewsFetcherInterface
             }
         }
 
-        // Get image URL
         $imageUrl = null;
         if (!empty($article['multimedia'])) {
             $multimedia = $article['multimedia'][0] ?? null;
@@ -111,7 +104,6 @@ class NYTimesFetcher implements NewsFetcherInterface
             }
         }
 
-        // Extract category from section or news_desk
         $category = $article['section_name'] ?? $article['news_desk'] ?? null;
 
         return [

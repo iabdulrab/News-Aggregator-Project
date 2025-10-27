@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Article\FetchArticleRequest;
 use App\Http\Resources\ArticleResource;
 use App\Services\Article\ArticleService;
 use Illuminate\Http\JsonResponse;
@@ -23,49 +24,49 @@ class ArticleController extends BaseController
      *     description="Retrieve paginated list of articles with advanced filtering. Features auto-fetch: if search query returns no results, automatically fetches from news sources (NewsAPI, Guardian, NYTimes)",
      *     tags={"Articles"},
      *     @OA\Parameter(
-     *         name="q",
+     *         name="search_query",
      *         in="query",
      *         description="Search keyword (searches in title, description, content). Triggers auto-fetch if no results found.",
      *         required=false,
      *         @OA\Schema(type="string", example="cryptocurrency")
      *     ),
      *     @OA\Parameter(
-     *         name="from",
+     *         name="from_date",
      *         in="query",
      *         description="Filter articles from this date",
      *         required=false,
      *         @OA\Schema(type="string", format="date", example="2025-10-01")
      *     ),
      *     @OA\Parameter(
-     *         name="to",
+     *         name="to_date",
      *         in="query",
      *         description="Filter articles until this date",
      *         required=false,
      *         @OA\Schema(type="string", format="date", example="2025-10-25")
      *     ),
      *     @OA\Parameter(
-     *         name="category",
+     *         name="article_category",
      *         in="query",
      *         description="Filter by category",
      *         required=false,
      *         @OA\Schema(type="string", example="Technology")
      *     ),
      *     @OA\Parameter(
-     *         name="source",
+     *         name="source_key",
      *         in="query",
      *         description="Filter by source(s). Comma-separated for multiple sources.",
      *         required=false,
      *         @OA\Schema(type="string", example="newsapi,guardian,nytimes")
      *     ),
      *     @OA\Parameter(
-     *         name="author",
+     *         name="author_name",
      *         in="query",
      *         description="Filter by author name (partial match)",
      *         required=false,
      *         @OA\Schema(type="string", example="John")
      *     ),
      *     @OA\Parameter(
-     *         name="sort",
+     *         name="sort_order",
      *         in="query",
      *         description="Sort order by published date",
      *         required=false,
@@ -110,46 +111,15 @@ class ArticleController extends BaseController
      *             @OA\Property(property="total", type="integer", example=150),
      *             @OA\Property(property="per_page", type="integer", example=15),
      *             @OA\Property(property="last_page", type="integer", example=10)
-     *         ),
-     *         @OA\Header(
-     *             header="X-Auto-Fetch",
-     *             description="Indicates if articles were auto-fetched from news sources",
-     *             @OA\Schema(type="string", enum={"true", "false"})
      *         )
      *     )
      * )
      */
-    public function index(Request $request): JsonResponse
+    public function index(FetchArticleRequest $request): JsonResponse
     {
-        // Prepare filters from request
-        $filters = [
-            'q' => $request->input('q'),
-            'from' => $request->input('from'),
-            'to' => $request->input('to'),
-            'category' => $request->input('category'),
-            'source' => $request->input('source'),
-            'author' => $request->input('author'),
-            'sort' => $request->input('sort', 'desc'),
-            'per_page' => $request->input('per_page', 15),
-        ];
-
-        // Get articles with auto-fetch feature
+        $filters = $request->filters();
         $result = $this->articleService->getArticlesWithAutoFetch($filters);
-
-        $message = 'Articles retrieved successfully';
-        if ($result['auto_fetch']) {
-            $message .= ' (auto-fetched from news sources)';
-        }
-
-        // Add custom header to indicate auto-fetch was performed
-        if ($result['auto_fetch']) {
-            return $this->paginatedResponseWithHeaders(
-                ArticleResource::collection($result['articles']),
-                $message,
-                ['X-Auto-Fetch' => 'true']
-            );
-        }
-
+        $message = $result['auto_fetch'] ? 'Articles retrieved successfully (auto-fetched from news sources)' : 'Articles retrieved successfully';
         return $this->paginatedResponse(ArticleResource::collection($result['articles']), $message);
     }
 
@@ -195,11 +165,9 @@ class ArticleController extends BaseController
     public function show(int $id): JsonResponse
     {
         $article = $this->articleService->getArticleById($id);
-
         if (!$article) {
             return $this->notFoundResponse('Article not found');
         }
-
         return $this->successResponse(new ArticleResource($article), 'Article retrieved successfully');
     }
 

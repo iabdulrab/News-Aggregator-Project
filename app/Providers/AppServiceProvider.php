@@ -32,7 +32,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserPreferenceRepositoryInterface::class, UserPreferenceRepository::class);
 
 
-        // Register individual news fetchers (lazy loading)
         $this->app->singleton('news.fetcher.newsapi', function () {
             return new NewsAPIFetcher();
         });
@@ -45,27 +44,22 @@ class AppServiceProvider extends ServiceProvider
             return new NYTimesFetcher();
         });
 
-        // Register the main News Aggregator Service
         $this->app->singleton(NewsAggregatorService::class, function ($app) {
             $fetchers = [];
             
-            // Only instantiate fetchers that are properly configured
             try {
                 $fetchers['newsapi'] = $app->make('news.fetcher.newsapi');
             } catch (\Exception $e) {
-                // NewsAPI not configured, skip it
             }
 
             try {
                 $fetchers['guardian'] = $app->make('news.fetcher.guardian');
             } catch (\Exception $e) {
-                // Guardian not configured, skip it
             }
 
             try {
                 $fetchers['nytimes'] = $app->make('news.fetcher.nytimes');
             } catch (\Exception $e) {
-                // NYTimes not configured, skip it
             }
 
             return new NewsAggregatorService($fetchers);

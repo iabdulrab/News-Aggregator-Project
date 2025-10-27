@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -57,23 +59,10 @@ class AuthController extends BaseController
      *     )
      * )
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse(
-                $validator->errors()->toArray(),
-                'Validation failed'
-            );
-        }
-
-        $result = $this->authService->registerUser($request->only('name', 'email', 'password'));
-
+        $request->validated();
+        $result = $this->authService->registerUser($request->all());
         return $this->createdResponse($result, 'User registered successfully');
     }
 
@@ -121,26 +110,11 @@ class AuthController extends BaseController
      *     )
      * )
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse(
-                $validator->errors()->toArray(),
-                'Validation failed'
-            );
-        }
-
-        try {
-            $result = $this->authService->loginUser($request->only('email', 'password'));
-            return $this->successResponse($result, 'Login successful');
-        } catch (\Exception $e) {
-            return $this->unauthorizedResponse('Invalid credentials');
-        }
+        $request->validated();
+        $result = $this->authService->loginUser($request->all());
+        return $this->successResponse($result, 'Login successful');
     }
 
     /**
@@ -169,7 +143,6 @@ class AuthController extends BaseController
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
-
         return $this->successMessage('Logged out successfully');
     }
 

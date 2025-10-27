@@ -18,8 +18,7 @@ class NewsAPIFetcher implements NewsFetcherInterface
         
         if (empty($apiKey)) {
             throw new \Exception(
-                'NewsAPI key is not configured. Please set NEWSAPI_KEY in your .env file. ' .
-                'Get your free API key at: https://newsapi.org/register'
+                'NewsAPI key is not configured. Please set NEWSAPI_KEY in your .env file. '
             );
         }
         
@@ -36,40 +35,34 @@ class NewsAPIFetcher implements NewsFetcherInterface
         try {
             $queryParams = [
                 'apiKey' => $this->apiKey,
-                'pageSize' => $params['pageSize'] ?? 100,
+                'pageSize' => $params['per_page'] ?? 50,
                 'language' => $params['language'] ?? 'en',
             ];
 
-            // Determine which endpoint to use
-            $useTopHeadlines = !empty($params['category']);
+            $useTopHeadlines = !empty($params['article_category']);
             
-            // Add optional parameters
-            if (!empty($params['q'])) {
-                $queryParams['q'] = $params['q'];
+            if (!empty($params['search_query'])) {
+                $queryParams['q'] = $params['search_query'];
             } elseif (!$useTopHeadlines) {
-                // NewsAPI /everything endpoint REQUIRES at least one of: q, qInTitle, sources, or domains
-                // Default to fetching general news articles
                 $queryParams['q'] = 'news OR technology OR business OR sports';
             }
 
-            if (!empty($params['category'])) {
-                $queryParams['category'] = $params['category'];
+            if (!empty($params['article_category'])) {
+                $queryParams['category'] = $params['article_category'];
             }
 
-            if (!empty($params['from'])) {
-                $queryParams['from'] = $params['from'];
+            if (!empty($params['from_date'])) {
+                $queryParams['from'] = date('Y-m-d', strtotime($params['from_date']));
             }
 
-            if (!empty($params['to'])) {
-                $queryParams['to'] = $params['to'];
+            if (!empty($params['to_date'])) {
+                $queryParams['to'] = date('Y-m-d', strtotime($params['to_date']));
             }
 
-            // Use 'everything' endpoint for comprehensive search, 'top-headlines' for categories
             $endpoint = $useTopHeadlines ? '/top-headlines' : '/everything';
 
-            // For local development, you might need to disable SSL verification
             $response = Http::withOptions([
-                'verify' => config('app.env') === 'production', // Only verify SSL in production
+                'verify' => config('app.env') === 'production',
             ])->timeout(30)->get($this->baseUrl . $endpoint, $queryParams);
 
             if ($response->successful()) {
@@ -112,7 +105,7 @@ class NewsAPIFetcher implements NewsFetcherInterface
             'url_to_image' => $article['urlToImage'] ?? null,
             'published_at' => isset($article['publishedAt']) ? date('Y-m-d H:i:s', strtotime($article['publishedAt'])) : null,
             'author_name' => $article['author'] ?? null,
-            'category' => null, // NewsAPI doesn't always provide category in response
+            'category' => null,
             'raw' => $article,
         ];
     }

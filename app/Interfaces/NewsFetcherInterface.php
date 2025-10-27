@@ -7,7 +7,7 @@ interface NewsFetcherInterface
     /**
      * Fetch articles from the news source
      *
-     * @param array $params Query parameters (search, category, from, to, etc.)
+     * @param array $params Query parameters (search_query, article_category, from_date, to_date, etc.)
      * @return array Array of articles
      */
     public function fetchArticles(array $params = []): array;

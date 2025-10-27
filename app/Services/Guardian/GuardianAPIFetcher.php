@@ -18,8 +18,7 @@ class GuardianAPIFetcher implements NewsFetcherInterface
         
         if (empty($apiKey)) {
             throw new \Exception(
-                'Guardian API key is not configured. Please set GUARDIAN_API_KEY in your .env file. ' .
-                'Get your free API key at: https://open-platform.theguardian.com/access/'
+                'Guardian API key is not configured. Please set GUARDIAN_API_KEY in your .env file. '
             );
         }
         
@@ -36,41 +35,35 @@ class GuardianAPIFetcher implements NewsFetcherInterface
         try {
             $queryParams = [
                 'api-key' => $this->apiKey,
-                'page-size' => $params['pageSize'] ?? 50,
-                'show-fields' => 'thumbnail,trailText,body,byline',
+                'page-size' => $params['per_page'] ?? 50,
                 'show-tags' => 'contributor',
                 'order-by' => 'newest',
             ];
 
-            // Add optional parameters
-            // Guardian API: only add q parameter if explicitly provided
-            // Without q parameter, it returns all latest articles by default
-            if (!empty($params['q'])) {
-                $queryParams['q'] = $params['q'];
+            if (!empty($params['search_query'])) {
+                $queryParams['q'] = $params['search_query'];
             }
 
-            if (!empty($params['section'])) {
-                $queryParams['section'] = $params['section'];
+            if (!empty($params['article_category'])) {
+                $queryParams['section'] = $params['article_category'];
             }
 
-            if (!empty($params['from'])) {
-                $queryParams['from-date'] = date('Y-m-d', strtotime($params['from']));
+            if (!empty($params['from_date'])) {
+                $queryParams['from-date'] = date('Y-m-d', strtotime($params['from_date']));
             }
 
-            if (!empty($params['to'])) {
-                $queryParams['to-date'] = date('Y-m-d', strtotime($params['to']));
+            if (!empty($params['to_date'])) {
+                $queryParams['to-date'] = date('Y-m-d', strtotime($params['to_date']));
             }
 
-            // For local development, you might need to disable SSL verification
             $response = Http::withOptions([
-                'verify' => config('app.env') === 'production', // Only verify SSL in production
+                'verify' => config('app.env') === 'production',
             ])->timeout(30)->get($this->baseUrl . '/search', $queryParams);
 
             if ($response->successful()) {
                 $data = $response->json();
                 $results = $data['response']['results'] ?? [];
                 
-                // Log successful fetch for debugging
                 Log::info('Guardian API fetch successful', [
                     'total' => $data['response']['total'] ?? 0,
                     'fetched' => count($results),
@@ -100,7 +93,6 @@ class GuardianAPIFetcher implements NewsFetcherInterface
         $fields = $article['fields'] ?? [];
         $tags = $article['tags'] ?? [];
         
-        // Extract author from tags or byline
         $author = null;
         if (!empty($tags)) {
             $contributorTags = array_filter($tags, fn($tag) => ($tag['type'] ?? '') === 'contributor');
@@ -125,7 +117,6 @@ class GuardianAPIFetcher implements NewsFetcherInterface
             'raw' => $article,
         ];
 
-        // Log for debugging
         Log::debug('Guardian article transformed', [
             'title' => $transformed['title'],
             'url' => $transformed['url'],
