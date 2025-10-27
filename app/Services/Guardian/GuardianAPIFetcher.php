@@ -66,8 +66,7 @@ class GuardianAPIFetcher implements NewsFetcherInterface
                 
                 Log::info('Guardian API fetch successful', [
                     'total' => $data['response']['total'] ?? 0,
-                    'fetched' => count($results),
-                    'url' => $response->effectiveUri()
+                    'fetched' => count($results)
                 ]);
                 
                 return $results;
@@ -116,12 +115,6 @@ class GuardianAPIFetcher implements NewsFetcherInterface
             'category' => $article['sectionName'] ?? null,
             'raw' => $article,
         ];
-
-        Log::debug('Guardian article transformed', [
-            'title' => $transformed['title'],
-            'url' => $transformed['url'],
-            'has_fields' => !empty($fields)
-        ]);
 
         return $transformed;
     }

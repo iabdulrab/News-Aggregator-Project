@@ -71,8 +71,7 @@ class NewsAPIFetcher implements NewsFetcherInterface
                 
                 Log::info('NewsAPI fetch successful', [
                     'total' => $data['totalResults'] ?? 0,
-                    'fetched' => count($articles),
-                    'endpoint' => $endpoint
+                    'fetched' => count($articles)
                 ]);
                 
                 return $articles;
@@ -80,8 +79,7 @@ class NewsAPIFetcher implements NewsFetcherInterface
 
             Log::error('NewsAPI fetch failed', [
                 'status' => $response->status(),
-                'body' => $response->body(),
-                'endpoint' => $endpoint
+                'body' => $response->body()
             ]);
 
             return [];
